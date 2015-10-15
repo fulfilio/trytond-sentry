@@ -10,32 +10,22 @@ installed by the trytond official package.
 Build Status (Master)
 ---------------------
 
-.. image:: https://travis-ci.org/openlabs/trytond-sentry.svg?branch=master
-    :target: https://travis-ci.org/openlabs/trytond-sentry
+.. image:: https://travis-ci.org/fulfilio/trytond-sentry.svg?branch=master
+    :target: https://travis-ci.org/fulfilio/trytond-sentry
 
 Build Status (Develop)
 ----------------------
 
-.. image:: https://travis-ci.org/openlabs/trytond-sentry.svg?branch=develop
-    :target: https://travis-ci.org/openlabs/trytond-sentry
+.. image:: https://travis-ci.org/fulfilio/trytond-sentry.svg?branch=develop
+    :target: https://travis-ci.org/fulfilio/trytond-sentry
 
 Screenshots
 -----------
 
-.. image:: https://www.github.com/openlabs/trytond-sentry/raw/master/images/message.png
-.. image:: https://www.github.com/openlabs/trytond-sentry/raw/master/images/grouplist.png
-.. image:: https://www.github.com/openlabs/trytond-sentry/raw/master/images/event.png
-.. image:: https://www.github.com/openlabs/trytond-sentry/raw/master/images/modules.png
-
-Copyright
----------
-
-Copyright (C) 2012-2014 Openlabs Technologies & Consulting (P) Ltd.
-
-License
--------
-
-GPLv3
+.. image:: https://www.github.com/fulfilio/trytond-sentry/raw/master/images/message.png
+.. image:: https://www.github.com/fulfilio/trytond-sentry/raw/master/images/grouplist.png
+.. image:: https://www.github.com/fulfilio/trytond-sentry/raw/master/images/event.png
+.. image:: https://www.github.com/fulfilio/trytond-sentry/raw/master/images/modules.png
 
 Installation
 ------------
@@ -50,7 +40,7 @@ For older versions::
 
 From git repository::
 
-    git clone git@github.com:openlabs/trytond-sentry.git
+    git clone git@github.com:fulfilio/trytond-sentry.git
     cd trytond-sentry
     python setup.py install
 
@@ -77,16 +67,3 @@ Changelog
 ---------
 
 Read CHANGELOG
-
-Authors and Contributors
-------------------------
-
-Sentry for Tryton was built at `Openlabs <http://www.openlabs.co.in/>`_.
-It's opensource, feel free to fork and contribute! Hate us! Just fork.
-You can tweet us at @openlabsindia with questions.
-
-Support or Contact
-------------------
-
-Having trouble? Contact sales@openlabs.co.in and we’ll help you sort
-it out.
