@@ -5,27 +5,24 @@
 
     Tryton application launcher which monkey patches the dispatcher to
     send errors to a sentry server if configured.
-
-    :copyright: © 2012-2014 by Openlabs Technologies & Consulting (P) Limited
-    :license: BSD, see LICENSE for more details.
 """
 
 import sys
 import os
 import argparse
 from functools import wraps
+
 DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
     '..', '..', 'trytond')))
 if os.path.isdir(DIR):
     sys.path.insert(0, os.path.dirname(DIR))
 
-import trytond
-from trytond.version import VERSION
+from trytond import __version__
+from trytond import server
 from trytond.exceptions import UserError, UserWarning, ConcurrencyException, \
-        NotLogged
+    NotLogged
 from raven import Client
 import pkg_resources
-
 
 _MODULES_INFO = {}
 CONSULTANT = os.environ.get('TRYTON_CONSULTANT', '<CONSULTANT NAME>')
@@ -92,7 +89,7 @@ def parse_commandline():
     parser = argparse.ArgumentParser(prog='trytond')
 
     parser.add_argument('--version', action='version',
-        version='%(prog)s ' + VERSION)
+        version='%(prog)s ' + __version__)
     parser.add_argument("-c", "--config", dest="configfile", metavar='FILE',
         default=os.environ.get('TRYTOND_CONFIG'), help="specify config file")
     parser.add_argument('--dev', dest='dev', action='store_true',
@@ -151,7 +148,7 @@ if '--profile' in sys.argv:
 
     options = parse_commandline()
     statfile = tempfile.mkstemp(".stat", "trytond-")[1]
-    profile.run('trytond.server.TrytonServer(options).run()', statfile)
+    profile.run('server.TrytonServer(options).run()', statfile)
     s = pstats.Stats(statfile)
     s.sort_stats('cumulative').print_stats()
     s.sort_stats('call').print_stats()
@@ -163,4 +160,4 @@ if '--profile' in sys.argv:
     os.remove(statfile)
 else:
     options = parse_commandline()
-    trytond.server.TrytonServer(options).run()
+    server.TrytonServer(options).run()

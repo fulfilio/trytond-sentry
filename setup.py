@@ -2,19 +2,17 @@
 """
     setup
 
-    :copyright: (c) 2012-2014 by Openlabs Technologies & Consulting (P) Limited
-    :license: GPLv3, see LICENSE for more details.
 """
 from setuptools import setup
 
 setup(
     name='trytond_sentry',
-    version='3.4.0.2',
+    version='3.6.0.1',
     description='Sentry Client for Tryton',
     long_description=open('README.rst').read(),
-    author="Openlabs Technologies & Consulting (P) Limited",
-    author_email="info@openlabs.co.in",
-    url="https://github.com/openlabs/trytond-sentry",
+    author="Fulfil.IO Inc., Openlabs Technologies & Consulting (P) Limited",
+    author_email="info@fulfil.io",
+    url="https://github.com/fulfilio/trytond-sentry",
     package_dir={'trytond_sentry': '.'},
     packages=[
         'trytond_sentry',
@@ -32,9 +30,9 @@ setup(
         'Programming Language :: Python',
         'Topic :: Office/Business',
     ],
-    license='GPL-3',
+    license='BSD',
     install_requires=[
-        "trytond>=3.4,<3.5",
+        "trytond>=3.6,<3.7",
         "raven",
     ],
     zip_safe=False,
