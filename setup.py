@@ -32,7 +32,7 @@ setup(
     ],
     license='BSD',
     install_requires=[
-        "trytond>=3.5,<3.7",
+        "trytond>=3.6,<3.7",
         "raven",
     ],
     zip_safe=False,
