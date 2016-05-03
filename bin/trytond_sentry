@@ -78,7 +78,7 @@ def patch(old_dispatch, client):
             raise UserError(
                 "Oops! Something terrible happened\n\n"
                 "Your ever loving friends at %s have been notified of "
-                "this grave fault!\n",
+                "this grave fault!\n"
                 "However, if you wish to speak with an %s consultant "
                 "about this issue, you may use the following reference:\n\n"
                 "%s" % (CONSULTANT, CONSULTANT, event_id)
