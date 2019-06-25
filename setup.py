@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
     name='trytond_sentry',
-    version='3.6.0.2',
+    version='5.0.0.1',
     description='Sentry Client for Tryton',
     long_description=open('README.rst').read(),
     author="Fulfil.IO Inc., Openlabs Technologies & Consulting (P) Limited",
@@ -32,8 +32,8 @@ setup(
     ],
     license='BSD',
     install_requires=[
-        "trytond>=3.6,<3.7",
-        "raven",
+        "trytond>=5.0,<5.1",
+        "sentry-sdk",
     ],
     zip_safe=False,
 )
