@@ -1,163 +1,70 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    trytond_sentry
-
-    Tryton application launcher which monkey patches the dispatcher to
-    send errors to a sentry server if configured.
-"""
-
+#!/usr/bin/env python3
+# This file is part of Tryton.  The COPYRIGHT file at the top level of
+# this repository contains the full copyright notices and license terms.
 import sys
+import logging
 import os
-import argparse
-from functools import wraps
+import glob
+import sentry_sdk
+
+from werkzeug.serving import run_simple
 
 DIR = os.path.abspath(os.path.normpath(os.path.join(__file__,
     '..', '..', 'trytond')))
 if os.path.isdir(DIR):
     sys.path.insert(0, os.path.dirname(DIR))
 
-from trytond import __version__
-from trytond import server
-from trytond.exceptions import UserError, UserWarning, ConcurrencyException, \
-    NotLogged
-from raven import Client
-import pkg_resources
 
-_MODULES_INFO = {}
-CONSULTANT = os.environ.get('TRYTON_CONSULTANT', '<CONSULTANT NAME>')
+logger = logging.getLogger(__name__)
 
 
-def get_modules():
-    """
-    Return the name and version of all python and tryton
-    modules in a dictionary object.
-    """
-    if _MODULES_INFO:
-        # Return the value if it was computed and made atleast once
-        return _MODULES_INFO
+import trytond.commandline as commandline
+from trytond.config import config, split_netloc
 
-    # Take all the packages in the current working set and
-    # their versions
-    for module in pkg_resources.WorkingSet():
-        _MODULES_INFO[module.key] = module.version
+parser = commandline.get_parser_daemon()
+options = parser.parse_args()
+commandline.config_log(options)
+extra_files = config.update_etc(options.configfile)
 
-    # Now update the tryton modules alone in a tryton namespace
-    # All names are prefixed with an _ so that they appear first
-    # when viewed from sentry.
-    from trytond.modules import get_module_info, get_module_list
-    for module in get_module_list():
-        _MODULES_INFO['_trytond.modules.' + module] = \
-            get_module_info(module).get('version')
-    return _MODULES_INFO
+# Import trytond things after it is configured
+from trytond.wsgi import app
+from trytond.pool import Pool
+from trytond.modules import get_module_list, get_module_info
 
 
-def patch(old_dispatch, client):
-    """
-    Patch the `old_dispatcher` with an exception handler to send exceptions
-    which occur to sentry through `client`
+# Patch dispatcher
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
 
-    :param old_dispatch: the function/method to be patched
-    :param client: An instance of :class:`raven.Client`.
-    """
-    @wraps(old_dispatch)
-    def wrapper(*args, **kwargs):
-        try:
-            return old_dispatch(*args, **kwargs)
-        except (UserError, UserWarning, ConcurrencyException, NotLogged):
-            raise
-        except Exception:
-            data = {
-                'modules': get_modules(),
-            }
-            # TODO: Add user interface data
-            event_id = client.captureException(True, data=data)
-            raise UserError(
-                "Oops! Something terrible happened\n\n"
-                "Your ever loving friends at %s have been notified of "
-                "this grave fault!\n"
-                "However, if you wish to speak with an %s consultant "
-                "about this issue, you may use the following reference:\n\n"
-                "%s" % (CONSULTANT, CONSULTANT, event_id)
-            )
-    return wrapper
+if SENTRY_DSN:
+    from trytond_sentry.utils import patch
+    from trytond.protocols import dispatcher
 
-
-def parse_commandline():
-    options = {}
-
-    parser = argparse.ArgumentParser(prog='trytond')
-
-    parser.add_argument('--version', action='version',
-        version='%(prog)s ' + __version__)
-    parser.add_argument("-c", "--config", dest="configfile", metavar='FILE',
-        default=os.environ.get('TRYTOND_CONFIG'), help="specify config file")
-    parser.add_argument('--dev', dest='dev', action='store_true',
-        help='enable development mode')
-    parser.add_argument("-v", "--verbose", action="store_true",
-        dest="verbose", help="enable verbose mode")
-
-    parser.add_argument("-d", "--database", dest="database_names", nargs='+',
-        default=[], metavar='DATABASE', help="specify the database name")
-    parser.add_argument("-u", "--update", dest="update", nargs='+', default=[],
-        metavar='MODULE', help="update a module")
-    parser.add_argument("--all", dest="update", action="append_const",
-        const="ir", help="update all installed modules")
-
-    parser.add_argument("--pidfile", dest="pidfile", metavar='FILE',
-        help="file where the server pid will be stored")
-    parser.add_argument("--logconf", dest="logconf", metavar='FILE',
-        help="logging configuration file (ConfigParser format)")
-    parser.add_argument("--cron", dest="cron", action="store_true",
-        help="enable cron")
-
-    # Add sentry DSN
-    parser.add_argument("-s", "--sentry-dsn",
-        help="Sentry DSN", dest="sentry_dsn")
-
-    parser.epilog = ('The first time a database is initialized admin '
-        'password is read from file defined by TRYTONPASSFILE '
-        'environment variable or interactively ask user.\n'
-        'The config file can be specified in the TRYTOND_CONFIG '
-        'environment variable.\n'
-        'The database URI can be specified in the TRYTOND_DATABASE_URI '
-        'environment variable.')
-
-    options = parser.parse_args()
-
-    if not options.database_names and options.update:
-        parser.error('Missing database option')
-
-    sentry_dsn = options.sentry_dsn or os.environ.get('SENTRY_DSN')
-
-    if sentry_dsn:
-        client = Client(sentry_dsn)
-
-        # Monkey patch the dispatcher
-        from trytond.protocols import dispatcher
-        dispatcher.dispatch = patch(dispatcher.dispatch, client)
-
-    return options
-
-
-if '--profile' in sys.argv:
-    import profile
-    import pstats
-    import tempfile
-    sys.argv.remove('--profile')
-
-    options = parse_commandline()
-    statfile = tempfile.mkstemp(".stat", "trytond-")[1]
-    profile.run('server.TrytonServer(options).run()', statfile)
-    s = pstats.Stats(statfile)
-    s.sort_stats('cumulative').print_stats()
-    s.sort_stats('call').print_stats()
-    s.sort_stats('time').print_stats()
-    s.sort_stats('time')
-    s.print_callers()
-    s.print_callees()
-
-    os.remove(statfile)
+    sentry_sdk.init(SENTRY_DSN)
+    dispatcher._dispatch = patch(dispatcher._dispatch)
 else:
-    options = parse_commandline()
-    server.TrytonServer(options).run()
+    logger.info(
+        "Sentry is not configured, "
+        "set SENTRY_DSN in environment variable, to configure"
+    )
+
+
+with commandline.pidfile(options):
+    Pool.start()
+    for name in options.database_names:
+        Pool(name).init()
+    hostname, port = split_netloc(config.get('web', 'listen'))
+    certificate = config.get('ssl', 'certificate')
+    privatekey = config.get('ssl', 'privatekey')
+    if certificate or privatekey:
+        ssl_context = (certificate, privatekey)
+    else:
+        ssl_context = None
+    for module in get_module_list():
+        info = get_module_info(module)
+        path = os.path.join(info['directory'], 'view', '*.xml')
+        extra_files.extend(glob.glob(path))
+    run_simple(hostname, port, app,
+        threaded=True,
+        extra_files=extra_files,
+        ssl_context=ssl_context,
+        use_reloader=options.dev)
